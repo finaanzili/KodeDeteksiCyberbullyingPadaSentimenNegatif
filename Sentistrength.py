@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # ======================= Kelas SpellChecker =========================
-# Digunakan untuk memperbaiki kata yang tidak baku dalam teks
 class spellCheck:
     def train(self, features):
         model = collections.defaultdict(lambda: 1)
@@ -40,12 +39,9 @@ class spellCheck:
         candidates = self.known([word]) or self.known(self.edits1(word)) or self.known_edits2(word) or [word]
         return max(candidates, key=self.NWORDS.get)
 
-
 # ======================= Kelas SentiStrength =========================
-# Untuk analisis sentimen berbasis leksikon dan aturan
 class sentiStrength:
     def __init__(self):
-        # Memuat kamus sentimen, emotikon, penguat, penyangkal, dsb.
         self.__sentiDict = self.load_dict('id_dict/sentimentword.txt', delimiter="\t")
         self.__emotDict = self.load_dict('id_dict/emoticon.txt', delimiter="\t")
         self.__negatingDict = self.load_list('id_dict/negatingword.txt')
@@ -54,14 +50,12 @@ class sentiStrength:
         self.__questionDict = self.load_list('id_dict/questionword.txt')
         self.__katadasar = self.load_list('id_dict/rootword.txt')
 
-        # Memuat daftar kata kasar
         with open('KamusKataKasar.txt', encoding='utf-8') as f:
             self.__kamusKasar = set(k.strip().lower() for k in f if k.strip())
 
-        # Inisialisasi penghitung sentimen
-        self.p = 0  # positif
-        self.n = 0  # negatif
-        self.nn = 0  # netral
+        self.p = 0
+        self.n = 0
+        self.nn = 0
 
     def load_list(self, path):
         with open(path, encoding='utf-8') as f:
@@ -82,20 +76,17 @@ class sentiStrength:
         return scores
 
     def main(self, text):
-        # Menghitung skor sentimen berdasarkan kata, emotikon, dan idiom
         sentimen = self.__sentiDict
         emoticon = self.__emotDict
         booster = self.__boosterDict
         idiom = self.__idiomDict
 
-        pos = 1  # nilai maksimal positif
-        neg = -1  # nilai maksimal negatif
+        pos = 1
+        neg = -1
         isQuestion = False
         sentence_score = []
-
         tweet = text.split()
 
-        # Hitung jumlah kata kasar dalam tweet
         jumlah_kata_kasar = sum(1 for w in tweet if w in self.__kamusKasar)
 
         for term_index, term in enumerate(tweet):
@@ -106,7 +97,6 @@ class sentiStrength:
             if term.isalpha():
                 if term in sentimen:
                     score = sentimen[term]
-                    # Pengecekan penguat dan penyangkal
                     if term_index > 0 and tweet[term_index - 1] in self.__negatingDict:
                         score = -abs(score) if score > 0 else abs(score)
                     if term_index > 0 and tweet[term_index - 1] in booster:
@@ -140,7 +130,6 @@ class sentiStrength:
                 term = f"{term} [{score}]"
             sentence_score.append(term)
 
-        # Tentukan label sentimen
         if abs(pos) > abs(neg):
             self.countSentimen("+")
             senti_label = "positif"
@@ -151,26 +140,21 @@ class sentiStrength:
             self.countSentimen("?")
             senti_label = "netral"
 
-        # Deteksi cyberbullying
-        if senti_label == "negatif" and (neg <= -3 or jumlah_kata_kasar > 0):
+        # Langsung klasifikasi untuk sentimen negatif
+        if senti_label == "negatif":
             cyberbullying_label = "Cyberbullying"
-        else:
-            cyberbullying_label = "Non-Cyberbullying"
-
-        # Penentuan tingkat keparahan
-        if cyberbullying_label == "Cyberbullying":
             if jumlah_kata_kasar >= 3 or neg <= -4:
                 tingkat_keparahan = "berat"
             elif jumlah_kata_kasar == 2 or neg == -3:
-                tingkat_keparahan = "sedang"
+                tingkat_keparahan = "menengah"
             elif jumlah_kata_kasar == 1 or neg in [-2, -1]:
                 tingkat_keparahan = "ringan"
             else:
                 tingkat_keparahan = "ringan"
         else:
+            cyberbullying_label = "Non-Cyberbullying"
             tingkat_keparahan = "tidak ada"
 
-        # Kembalikan hasil analisis dalam bentuk dictionary
         return {
             "teks_dengan_skor": ' '.join(sentence_score),
             "skor_pos": pos,
@@ -192,15 +176,12 @@ class sentiStrength:
     def getSentimenScore(self):
         return f"[positif:{self.p}] [negatif:{self.n}] [netral:{self.nn}]"
 
-
 # ======================= Fungsi Utama Program =========================
 def main():
-    # Baca dataset hasil preprocessing
-    df = pd.read_csv("preprocessing.csv")
+    df = pd.read_csv("preprocessingfiks_3.csv")
     ss = sentiStrength()
     hasil_list = []
 
-    # Lakukan analisis per baris
     for _, row in df.iterrows():
         try:
             token_list = ast.literal_eval(row['tweet_bersih'])
@@ -221,18 +202,17 @@ def main():
             "teks_dengan_skor": hasil["teks_dengan_skor"]
         })
 
-    # Simpan hasil ke file CSV
     hasil_df = pd.DataFrame(hasil_list)
-    hasil_df.to_csv("sentistrength.csv", index=False)
+    hasil_df.to_csv("sentistrengthfiks_3.csv", index=False)
     print("✅ Analisis selesai. File disimpan: sentistrength.csv")
     print(ss.getSentimenScore())
 
-# ======================= Visualisasi =========================
+    # ======================= Visualisasi =========================
     sns.set(style="whitegrid")
-    plt.figure(figsize=(15, 4))
+    plt.figure(figsize=(12, 5))
 
-# Grafik 1: Distribusi Sentimen
-    plt.subplot(1, 3, 1)
+    # Grafik 1: Distribusi Sentimen
+    plt.subplot(1, 2, 1)
     ax1 = sns.countplot(data=hasil_df, x="sentimen", palette="coolwarm")
     plt.title("Distribusi Sentimen")
     plt.xlabel("Kategori Sentimen")
@@ -241,26 +221,17 @@ def main():
         height = p.get_height()
         ax1.text(p.get_x() + p.get_width() / 2., height + 2, int(height), ha="center", fontsize=9)
 
-# Grafik 2: Deteksi Cyberbullying
-    plt.subplot(1, 3, 2)
-    ax2 = sns.countplot(data=hasil_df, x="labeling", palette="Set2")
-    plt.title("Deteksi Cyberbullying")
-    plt.xlabel("Label")
+    # Grafik 2: Distribusi Tingkat Keparahan
+    plt.subplot(1, 2, 2)
+    hasil_keparahan = hasil_df[hasil_df["keparahan"] != "tidak ada"]
+    ax2 = sns.countplot(data=hasil_keparahan, x="keparahan", 
+                        order=["ringan", "menengah", "berat"], palette="magma")
+    plt.title("Tingkat Keparahan Cyberbullying")
+    plt.xlabel("Kategori Keparahan")
     plt.ylabel("Jumlah Tweet")
     for p in ax2.patches:
         height = p.get_height()
-        ax2.text(p.get_x() + p.get_width() / 2., height + 2, int(height), ha="center", fontsize=9)
-
-# Grafik 3: Tingkat Keparahan
-    plt.subplot(1, 3, 3)
-    ax3 = sns.countplot(data=hasil_df, x="keparahan", 
-                    order=["tidak ada", "ringan", "sedang", "berat"], palette="magma")
-    plt.title("Tingkat Keparahan Cyberbullying")
-    plt.xlabel("Kategori")
-    plt.ylabel("Jumlah Tweet")
-    for p in ax3.patches:
-        height = p.get_height()
-        ax3.text(p.get_x() + p.get_width() / 2., height + 2, int(height), ha="center", fontsize=9)
+        ax2.text(p.get_x() + p.get_width() / 2., height + 1, int(height), ha="center", fontsize=9)
 
     plt.tight_layout()
     plt.show()
