@@ -74,4 +74,4 @@ with open("evaluasi_matrix_fiks_3.txt", "w", encoding="utf-8") as f:
     f.write(f"Recall   : {recall:.2f}%\n")
     f.write(f"F1 Score : {f1:.2f}%\n")
 
-print("✅ Hasil evaluasi disimpan ke 'evaluasi_matrix.txt'")
+print("✅ Hasil evaluasi disimpan ke 'evaluasi_matrix_fiks_3.txt'")
