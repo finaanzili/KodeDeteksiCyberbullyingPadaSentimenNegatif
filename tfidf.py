@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 
 # ----------------- 1. Load Data Preprocessing -----------------
-df_pre = pd.read_csv('preprocessing.csv')  # hanya file preprocessing (tweet_bersih)
+df_pre = pd.read_csv('preprocessingfiks_3.csv')  # hanya file preprocessing (tweet_bersih)
 
 # ----------------- 2. Ubah tweet_bersih (string list) menjadi list token -----------------
 df_pre['tweet_tokens'] = df_pre['tweet_bersih'].apply(ast.literal_eval)
@@ -34,5 +34,5 @@ tfidf_only_cols = [col for col in tfidf_df.columns if col != 'tweet_tokens']
 tfidf_df['tfidf'] = tfidf_df[tfidf_only_cols].mean(axis=1)
 
 # ----------------- 7. Simpan Hasil -----------------
-tfidf_df.to_csv('tfidf.csv', index=False)
-print("✅ TF-IDF tanpa label berhasil dibuat dan disimpan di 'tfidf.csv'")
+tfidf_df.to_csv('tfidf_fiks_3.csv', index=False)
+print("✅ TF-IDF tanpa label berhasil dibuat dan disimpan di 'tfidf_fiks_3.csv'")
