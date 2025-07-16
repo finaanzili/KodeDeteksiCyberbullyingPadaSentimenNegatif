@@ -204,7 +204,7 @@ def main():
 
     hasil_df = pd.DataFrame(hasil_list)
     hasil_df.to_csv("sentistrengthfiks_3.csv", index=False)
-    print("✅ Analisis selesai. File disimpan: sentistrength.csv")
+    print("✅ Analisis selesai. File disimpan: sentistrengthfiks_3.csv")
     print(ss.getSentimenScore())
 
     # ======================= Visualisasi =========================
