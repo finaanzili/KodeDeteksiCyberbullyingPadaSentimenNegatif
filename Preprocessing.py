@@ -10,7 +10,7 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
 # === Load dataset tweet ===
-data = pd.read_csv('Data Cyberbullying Twitter 24_25.csv')  # Pastikan kolom 'full_text' tersedia
+data = pd.read_csv('DataCyber2425.csv')  # Pastikan kolom 'full_text' tersedia
 
 # === Inisialisasi stemmer dari Sastrawi ===
 factory = StemmerFactory()
@@ -92,6 +92,5 @@ data['jumlah_kata_kasar'] = data['tweet_bersih'].apply(hitung_kasar)
 data['kata_kasar_terdeteksi'] = data['tweet_bersih'].apply(lambda tokens: [w for w in tokens if w in daftar_kasar])
 
 # === Simpan hasil preprocessing ===
-data.to_csv('preprocessing.csv', index=False)
+data.to_csv('preprocessingfiks_3.csv', index=False)
 print("✅ Preprocessing selesai. Hasil disimpan di 'preprocessing.csv'")
-
