@@ -93,4 +93,4 @@ data['kata_kasar_terdeteksi'] = data['tweet_bersih'].apply(lambda tokens: [w for
 
 # === Simpan hasil preprocessing ===
 data.to_csv('preprocessingfiks_3.csv', index=False)
-print("✅ Preprocessing selesai. Hasil disimpan di 'preprocessing.csv'")
+print("✅ Preprocessing selesai. Hasil disimpan di 'preprocessingfiks_3.csv'")
