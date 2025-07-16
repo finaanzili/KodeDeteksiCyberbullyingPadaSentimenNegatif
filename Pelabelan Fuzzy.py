@@ -115,7 +115,7 @@ except Exception as e:
 # TAHAP 7: SIMPAN HASIL
 # ============================
 df.to_csv("hasil_fuzzy_fiks_3.csv", index=False)
-print("✅ Hasil akhir disimpan di hasil_fuzzy.csv")
+print("✅ Hasil akhir disimpan di hasil_fuzzy_fiks_3.csv")
 
 # ============================
 # TAHAP 8: VISUALISASI KEANGGOTAAN
