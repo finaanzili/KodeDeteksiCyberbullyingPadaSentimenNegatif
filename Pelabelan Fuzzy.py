@@ -8,7 +8,7 @@ import seaborn as sns
 # ============================
 # TAHAP 1: LOAD DATA & KAMUS
 # ============================
-df = pd.read_csv("tfidf.csv")  # harus ada kolom 'tfidf' dan 'text' atau 'tweet_tokens'
+df = pd.read_csv("tfidf_fiks_3.csv")  # harus ada kolom 'tfidf' dan 'text' atau 'tweet_tokens'
 
 if 'tweet_tokens' not in df.columns:
     df['tweet_tokens'] = df['text'].astype(str).str.lower().str.split()
@@ -33,24 +33,23 @@ df['jumlah_kata_kasar'] = df['tweet_tokens'].apply(hitung_kata_kasar)
 tfidf = ctrl.Antecedent(np.arange(0, 1.01, 0.01), 'TF-IDF')
 keparahan = ctrl.Consequent(np.arange(0, 101, 1), 'Keparahan')
 
-# Fungsi keanggotaan TF-IDF
+# Fungsi keanggotaan input TF-IDF
 tfidf['rendah'] = fuzz.trimf(tfidf.universe, [0.0, 0.0, 0.3])
 tfidf['sedang'] = fuzz.trimf(tfidf.universe, [0.2, 0.5, 0.8])
 tfidf['tinggi'] = fuzz.trimf(tfidf.universe, [0.7, 1.0, 1.0])
 
 # Fungsi keanggotaan output keparahan
 keparahan['ringan'] = fuzz.trimf(keparahan.universe, [0, 0, 30])
-keparahan['sedang'] = fuzz.trimf(keparahan.universe, [20, 50, 80])
+keparahan['menengah'] = fuzz.trimf(keparahan.universe, [20, 50, 80])
 keparahan['berat'] = fuzz.trimf(keparahan.universe, [70, 100, 100])
 
-# Aturan fuzzy (mapping TF-IDF → Keparahan berdasarkan batasan nilai)
+# Aturan fuzzy 
 rule1 = ctrl.Rule(tfidf['rendah'], keparahan['ringan'])
-rule2 = ctrl.Rule(tfidf['sedang'], keparahan['sedang'])
+rule2 = ctrl.Rule(tfidf['sedang'], keparahan['menengah'])
 rule3 = ctrl.Rule(tfidf['tinggi'], keparahan['berat'])
 
 keparahan_ctrl = ctrl.ControlSystem([rule1, rule2, rule3])
 keparahan_simulasi = ctrl.ControlSystemSimulation(keparahan_ctrl)
-
 
 # ============================
 # TAHAP 4: INFERENSI & PELABELAN
@@ -60,59 +59,35 @@ hasil = []
 for i, row in df.iterrows():
     val = row['tfidf_norm']
     n_kasar = row['jumlah_kata_kasar']
-    
+
     keparahan_simulasi.input['TF-IDF'] = val
     keparahan_simulasi.compute()
     nilai = keparahan_simulasi.output['Keparahan']
 
-    # Label sentimen
-    # ============================
-    # ATURAN PELABELAN SENTIMEN
-    # ============================
-    if nilai < 30:
+    # ATURAN PELABELAN SENTIMEN (berdasarkan fuzzy dan kata kasar saja)
+    if n_kasar > 0:
+        label_sentimen = 'negatif'
+    elif nilai < 30:
         label_sentimen = 'positif'
     elif nilai < 50:
         label_sentimen = 'netral'
     else:
         label_sentimen = 'negatif'
 
-    # ============================
     # ATURAN PELABELAN CYBERBULLYING
-    # ============================
-    if n_kasar > 0 or label_sentimen == 'negatif':
-        label_cb = 'Cyberbullying'
-    elif label_sentimen == 'positif' and nilai > 30:
-        label_cb = 'Cyberbullying'
-    elif label_sentimen == 'netral' and nilai > 50:
+    if label_sentimen == 'negatif':
         label_cb = 'Cyberbullying'
     else:
         label_cb = 'Non-Cyberbullying'
 
-    # ============================
-    # ATURAN KEKLASIFIKASIAN TINGKAT KEPARAHAN
-    # ============================
-    if label_cb == 'Cyberbullying':
+    # ATURAN KLASIFIKASI TINGKAT KEPARAHAN HANYA UNTUK NEGATIF (tanpa jumlah kata kasar)
+    if label_cb == 'Cyberbullying' and label_sentimen == 'negatif':
         if nilai <= 30:
-            label_fuzzy = 'ringan'
+            label_keparahan = 'ringan'
         elif nilai <= 50:
-            label_fuzzy = 'sedang'
+            label_keparahan = 'menengah'
         else:
-            label_fuzzy = 'berat'
-
-        if n_kasar >= 3:
-            label_kasar = 'berat'
-        elif n_kasar == 2:
-            label_kasar = 'sedang'
-        elif n_kasar == 1:
-            label_kasar = 'ringan'
-        else:
-            label_kasar = label_fuzzy
-
-
-        tingkat = ['tidak ada', 'ringan', 'sedang', 'berat']
-        index_fuzzy = tingkat.index(label_fuzzy)
-        index_kasar = tingkat.index(label_kasar)
-        label_keparahan = tingkat[max(index_fuzzy, index_kasar)]
+            label_keparahan = 'berat'
     else:
         label_keparahan = 'tidak ada'
 
@@ -126,21 +101,20 @@ df['label_sentimen'] = [x[1] for x in hasil]
 df['label_cyberbullying'] = [x[2] for x in hasil]
 df['keparahan_label'] = [x[3] for x in hasil]
 
-
 # ============================
 # TAHAP 6: GROUND TRUTH (SENTISTRENGTH)
 # ============================
 try:
-    df_senti = pd.read_csv("sentistrength.csv")
+    df_senti = pd.read_csv("sentistrengthfiks_3.csv")
     df['labeling'] = df_senti['labeling']
 except Exception as e:
-    print("⚠️ Gagal memuat sentistrength.csv:", e)
+    print("⚠️ Gagal memuat sentistrengthfiks_3.csv:", e)
     df['labeling'] = 'UNKNOWN'
 
 # ============================
 # TAHAP 7: SIMPAN HASIL
 # ============================
-df.to_csv("hasil_fuzzy.csv", index=False)
+df.to_csv("hasil_fuzzy_fiks_3.csv", index=False)
 print("✅ Hasil akhir disimpan di hasil_fuzzy.csv")
 
 # ============================
@@ -154,11 +128,10 @@ plt.show()
 # TAHAP 9: VISUALISASI HASIL INFERENSI
 # ============================
 plt.figure(figsize=(8, 5))
-ax = sns.countplot(data=df, x='keparahan_label',
-                   order=['tidak ada', 'ringan', 'sedang', 'berat'],
+ax = sns.countplot(data=df[df['keparahan_label'] != 'tidak ada'], x='keparahan_label',
+                   order=['ringan', 'menengah', 'berat'],
                    palette='coolwarm')
 
-# Tambahkan angka di atas batang
 for p in ax.patches:
     height = p.get_height()
     ax.text(p.get_x() + p.get_width() / 2., height + 5,
@@ -175,7 +148,6 @@ plt.show()
 plt.figure(figsize=(8, 5))
 ax = sns.countplot(data=df, x='label_cyberbullying', palette='Set1')
 
-# Tambahkan angka di atas batang
 for p in ax.patches:
     height = p.get_height()
     ax.text(p.get_x() + p.get_width() / 2., height + 5,
@@ -194,7 +166,6 @@ ax = sns.countplot(data=df, x='label_sentimen',
                    palette='Set2',
                    order=['positif', 'netral', 'negatif'])
 
-# Tambahkan angka di atas batang
 for p in ax.patches:
     height = p.get_height()
     ax.text(p.get_x() + p.get_width() / 2., height + 5,
@@ -208,8 +179,6 @@ plt.tight_layout()
 plt.savefig("label_sentimen_fuzzy.png")
 plt.show()
 
-
-# 2. Scatterplot: Jumlah Kata Kasar vs Nilai Keparahan
 plt.figure(figsize=(8, 5))
 sns.scatterplot(data=df[df['label_cyberbullying'] == 'Cyberbullying'], 
                 x='jumlah_kata_kasar', y='keparahan_nilai',
@@ -221,10 +190,6 @@ plt.grid(True, linestyle='--', alpha=0.6)
 plt.tight_layout()
 plt.savefig('scatter_keparahan_vs_kasar7.png')
 plt.show()
-
-# ============================
-# TAHAP 5.1: CETAK JUMLAH LABEL
-# ============================
 
 print("\n📊 Jumlah Data per Label Sentimen:")
 print(df['label_sentimen'].value_counts())
